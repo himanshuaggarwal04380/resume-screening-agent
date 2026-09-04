@@ -22,3 +22,9 @@ Thumbs.db
 .vscode/
 .idea/
 "@ | Set-Content .gitignore
+
+# logs
+logs/
+
+# data
+data/
