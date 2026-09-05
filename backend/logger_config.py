@@ -11,25 +11,22 @@ def get_logger(name: str) -> logging.Logger:
 
     logger.setLevel(logging.DEBUG)
 
-    # Create logs folder if it doesn't exist
-    os.makedirs("logs", exist_ok=True)
+    # Use the module name for a dedicated subfolder, e.g. logs/resume_parser/
+    # "__main__" happens when a file is run directly rather than imported —
+    # fall back to something readable in that case
+    module_folder = name if name != "__main__" else "main"
+    log_dir = os.path.join("logs", module_folder)
+    os.makedirs(log_dir, exist_ok=True)
 
-    # Create a NEW log file for every program execution
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_file = os.path.join("logs", f"app_{timestamp}.log")
+    log_file = os.path.join(log_dir, f"{timestamp}.log")
 
-    # Console handler - shows INFO and above in terminal
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
 
-    # File handler - saves EVERYTHING including DEBUG
-    file_handler = logging.FileHandler(
-        log_file,
-        encoding="utf-8"
-    )
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
 
-    # Common formatter
     formatter = logging.Formatter(
         "%(asctime)s | %(name)s | %(levelname)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
@@ -44,4 +41,3 @@ def get_logger(name: str) -> logging.Logger:
     logger.info(f"Log file created: {log_file}")
 
     return logger
-
