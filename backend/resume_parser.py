@@ -3,9 +3,10 @@ import re
 import pdfplumber
 from logger_config import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger(os.path.splitext(os.path.basename(__file__))[0])
 
 ALLOWED_PUNCTUATION = set(".,;:'\"!?()[]{}-_/\\@#$%&*+=<>|~`^•·–—")
+MIN_VALID_LENGTH = 100  # a real resume should have at least this many characters
 
 
 def clean_text(text: str) -> str:
@@ -48,8 +49,11 @@ def extract_text_from_pdf(pdf_path: str) -> str | None:
 
         raw_text = "\n".join(text_parts)
 
-        if not raw_text.strip():
-            logger.warning(f"No extractable text found in {pdf_path} (likely scanned/image-only PDF)")
+        if len(raw_text.strip()) < MIN_VALID_LENGTH:
+            logger.warning(
+                f"Extracted text too short ({len(raw_text.strip())} chars) from {pdf_path} "
+                f"- likely a scanned/image-only PDF or empty document"
+            )
             return None
 
         cleaned = clean_text(raw_text)
