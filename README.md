@@ -18,10 +18,7 @@
    - Bias statistics: pandas + scipy
 
    ## Status
-   🚧 In development — Phase 0 (project setup) complete.
-
-   ## How to Run
-   _Coming soon — will be filled in once the backend and frontend are working._
+   🚧 In development — Phase 2 complete.
 
    ## Project Structure
 ```
