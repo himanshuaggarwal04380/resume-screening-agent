@@ -59,9 +59,19 @@ def extract_json_from_response(raw_text: str) -> str:
     if fence_match:
         return fence_match.group(1).strip()
 
-    # No fence found - fall back to finding the outermost { ... }
-    start = raw_text.find("{")
-    end = raw_text.rfind("}")
+    # No fence found - figure out whether the JSON is an object {..} or array [..],
+    # by checking whichever opening character appears first in the text
+    brace_start = raw_text.find("{")
+    bracket_start = raw_text.find("[")
+
+    if brace_start == -1 and bracket_start == -1:
+        return raw_text.strip()  # no JSON structure found at all
+
+    if bracket_start != -1 and (brace_start == -1 or bracket_start < brace_start):
+        start, end = bracket_start, raw_text.rfind("]")
+    else:
+        start, end = brace_start, raw_text.rfind("}")
+
     if start != -1 and end != -1 and end > start:
         return raw_text[start:end + 1].strip()
 
@@ -115,6 +125,7 @@ def structure_resume(resume_text: str, max_retries: int = 3) -> dict:
             validate_structured_resume(data)
             data["email"] = clean_email(data.get("email"))
             logger.info(f"Successfully structured resume for: {data.get('name', 'unknown')}")
+            logger.debug(f"Final structured resume:\n{json.dumps(data, indent=2)}")
             return data
         except (json.JSONDecodeError, ValueError) as e:
             last_error = e
@@ -128,7 +139,7 @@ def structure_resume(resume_text: str, max_retries: int = 3) -> dict:
 if __name__ == "__main__":
     from resume_parser import extract_text_from_pdf
 
-    sample_path = "data/sample_pdf_1.pdf"
+    sample_path = "data/sample_pdf_2.pdf"
     cleaned_text = extract_text_from_pdf(sample_path)
 
     if cleaned_text is None:
