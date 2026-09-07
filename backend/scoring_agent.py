@@ -3,6 +3,7 @@ import json
 import os
 from logger_config import get_logger
 from resume_structurer import extract_json_from_response
+from config import LLM_MODEL
 
 logger = get_logger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -45,8 +46,8 @@ def validate_scores(scores: list[dict], rubric: list[dict]) -> None:
         if missing_fields:
             raise ValueError(f"Score item missing fields: {missing_fields}")
 
-        if not isinstance(item["score"], (int, float)) or not (1 <= item["score"] <= 10):
-            raise ValueError(f"Invalid score value for {item['criterion']}: {item['score']}")
+        if not isinstance(item["score"], (int, float)):
+            raise ValueError(f"Score for {item['criterion']} is not a number: {item['score']}")
 
 NO_EVIDENCE_PHRASES = ["no evidence", "not mentioned", "no relevant experience", "not explicitly mentioned"]
 
@@ -89,7 +90,7 @@ def score_resume(resume_data: dict, rubric: list[dict], max_retries: int = 3) ->
 
     for attempt in range(1, max_retries + 1):
         response = ollama.chat(
-            model="llama3.1:8b",
+            model=LLM_MODEL,
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -104,13 +105,13 @@ def score_resume(resume_data: dict, rubric: list[dict], max_retries: int = 3) ->
             scores = normalize_no_evidence_scores(scores)
 
             total_score = calculate_weighted_total(scores, rubric)
-            ...
 
             result = {
                 "candidate_name": resume_data.get("name", "Unknown"),
                 "total_score": total_score,
                 "criteria_breakdown": scores
             }
+            result["summary"] = generate_summary(result, rubric)
 
             logger.info(f"Successfully scored {result['candidate_name']}: {total_score}/10")
             logger.debug(f"Full scoring result:\n{json.dumps(result, indent=2)}")
@@ -122,6 +123,31 @@ def score_resume(resume_data: dict, rubric: list[dict], max_retries: int = 3) ->
 
     logger.error(f"Failed to score resume after {max_retries} attempts. Last error: {last_error}")
     raise RuntimeError(f"Failed to score resume after {max_retries} attempts. Last error: {last_error}")
+
+def generate_summary(result: dict, rubric: list[dict]) -> str:
+    name = result["candidate_name"]
+    total = result["total_score"]
+    breakdown = result["criteria_breakdown"]
+
+    # Sort criteria by score to find genuine standouts and gaps
+    sorted_by_score = sorted(breakdown, key=lambda x: x["score"], reverse=True)
+    strengths = [item for item in sorted_by_score if item["score"] >= 8][:3]
+    gaps = [item for item in sorted_by_score if item["score"] <= 2][:3]
+
+    lines = [f"{name} scored {total}/10 overall."]
+
+    if strengths:
+        strength_names = ", ".join(item["criterion"] for item in strengths)
+        lines.append(f"Strongest areas: {strength_names}.")
+
+    if gaps:
+        gap_names = ", ".join(item["criterion"] for item in gaps)
+        lines.append(f"Weakest areas: {gap_names}.")
+
+    if not strengths and not gaps:
+        lines.append("Scores were moderate and evenly spread across all criteria.")
+
+    return " ".join(lines)
 
 
 if __name__ == "__main__":

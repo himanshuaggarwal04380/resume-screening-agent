@@ -3,6 +3,7 @@ import re
 import pdfplumber
 from logger_config import get_logger
 
+
 logger = get_logger(os.path.splitext(os.path.basename(__file__))[0])
 
 ALLOWED_PUNCTUATION = set(".,;:'\"!?()[]{}-_/\\@#$%&*+=<>|~`^•·–—")

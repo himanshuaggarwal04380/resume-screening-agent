@@ -3,6 +3,7 @@ import json
 import re
 import os
 from logger_config import get_logger
+from config import LLM_MODEL
 
 logger = get_logger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -111,7 +112,7 @@ def structure_resume(resume_text: str, max_retries: int = 3) -> dict:
 
     for attempt in range(1, max_retries + 1):
         response = ollama.chat(
-            model="llama3.1:8b",
+            model=LLM_MODEL,
             messages=[{"role": "user", "content": prompt}]
         )
 
