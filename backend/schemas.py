@@ -15,3 +15,19 @@ class JobResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class RubricUpdateRequest(BaseModel):
+    rubric: list[dict[str, Any]]
+    
+class RankingEntry(BaseModel):
+    resume_id: int
+    filename: str
+    total_score: float
+    criteria_breakdown: list[dict[str, Any]]
+    summary: str
+
+
+class RankingsResponse(BaseModel):
+    job_id: int
+    job_title: str
+    rankings: list[RankingEntry]

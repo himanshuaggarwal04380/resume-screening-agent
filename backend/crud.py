@@ -23,6 +23,17 @@ def create_job(db: Session, title: str, raw_description: str, rubric: list[dict]
 def get_job(db: Session, job_id: int) -> Job | None:
     return db.query(Job).filter(Job.id == job_id).first()
 
+def update_job_rubric(db: Session, job_id: int, rubric: list[dict]) -> Job | None:
+    job = get_job(db, job_id)
+    if job is None:
+        return None
+
+    job.rubric_json = json.dumps(rubric)
+    db.commit()
+    db.refresh(job)
+    logger.info(f"Updated rubric for job_id {job_id}")
+    return job
+
 
 def get_job_rubric(db: Session, job_id: int) -> list[dict] | None:
     job = get_job(db, job_id)
@@ -77,5 +88,7 @@ def get_rankings_for_job(db: Session, job_id: int) -> list[dict]:
             "criteria_breakdown": json.loads(score.criteria_breakdown_json),
             "summary": score.justification_text
         })
+        
+
 
     return rankings
