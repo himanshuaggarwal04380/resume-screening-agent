@@ -2,6 +2,7 @@ import json
 from sqlalchemy.orm import Session
 from models import Job, Resume, Score
 from logger_config import get_logger
+from rubric_builder import normalize_weights, validate_rubric
 import os
 
 logger = get_logger(os.path.splitext(os.path.basename(__file__))[0])
@@ -27,6 +28,9 @@ def update_job_rubric(db: Session, job_id: int, rubric: list[dict]) -> Job | Non
     job = get_job(db, job_id)
     if job is None:
         return None
+
+    validate_rubric(rubric)
+    rubric = normalize_weights(rubric)
 
     job.rubric_json = json.dumps(rubric)
     db.commit()
@@ -54,6 +58,13 @@ def create_resume(db: Session, job_id: int, filename: str, raw_text: str, parsed
     db.refresh(resume)
     logger.info(f"Saved resume '{filename}' for job_id {job_id} with id {resume.id}")
     return resume
+
+def get_resume_by_id(db: Session, resume_id: int) -> Resume | None:
+    return db.query(Resume).filter(Resume.id == resume_id).first()
+
+
+def get_score_for_resume(db: Session, resume_id: int) -> Score | None:
+    return db.query(Score).filter(Score.resume_id == resume_id).first()
 
 
 def get_resumes_for_job(db: Session, job_id: int) -> list[Resume]:

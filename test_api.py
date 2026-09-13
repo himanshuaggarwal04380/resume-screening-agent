@@ -36,3 +36,24 @@ job_id_to_check = response.json()["id"]  # or hardcode a job_id you know has sco
 rankings_response = requests.get(f"http://127.0.0.1:8000/jobs/{job_id_to_check}/rankings")
 print(f"\nRankings status: {rankings_response.status_code}")
 print(rankings_response.json())
+
+job_id_to_upload = response.json()["id"]  # reuse the job just created
+
+with open("data/sample_pdf_1.pdf", "rb") as f1, open("data/sample_pdf_2.pdf", "rb") as f2:
+    files = [
+        ("files", ("sample_pdf_1.pdf", f1, "application/pdf")),
+        ("files", ("sample_pdf_2.pdf", f2, "application/pdf")),
+    ]
+    upload_response = requests.post(
+        f"http://127.0.0.1:8000/jobs/{job_id_to_upload}/resumes",
+        files=files
+    )
+
+print(f"\nUpload status: {upload_response.status_code}")
+print(upload_response.json())
+
+resume_id_to_check = upload_response.json()["results"][0]["resume_id"]
+
+detail_response = requests.get(f"http://127.0.0.1:8000/resumes/{resume_id_to_check}")
+print(f"\nResume detail status: {detail_response.status_code}")
+print(detail_response.json())
